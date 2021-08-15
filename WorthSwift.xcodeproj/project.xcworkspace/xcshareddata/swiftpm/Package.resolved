@@ -1,0 +1,25 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "KeychainAccess",
+        "repositoryURL": "https://github.com/kishikawakatsumi/KeychainAccess",
+        "state": {
+          "branch": null,
+          "revision": "84e546727d66f1adc5439debad16270d0fdd04e7",
+          "version": "4.2.2"
+        }
+      },
+      {
+        "package": "PhoneNumberKit",
+        "repositoryURL": "https://github.com/marmelroy/PhoneNumberKit.git",
+        "state": {
+          "branch": null,
+          "revision": "1ef0431b971f69c48ca5eb4cdba07f2c5da54c35",
+          "version": "3.3.3"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
