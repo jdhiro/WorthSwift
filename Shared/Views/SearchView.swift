@@ -35,7 +35,7 @@ struct CustomerAccount: Codable {
 
 struct SearchView: View {
     
-    let phoneNumberKit = PhoneNumberKit()
+    @Environment(\.dismiss) var dismiss
     
     @State var searchText: String = ""
     @State var searchResults: [CustomerDetail] = []
@@ -62,7 +62,6 @@ struct SearchView: View {
     }
     
     var body: some View {
-        
         VStack {
             TextField("Search", text: $searchText)
                 .modifier(TextFieldClearButton(text: $searchText))
@@ -77,19 +76,19 @@ struct SearchView: View {
                     }
                 }
             if (searchResults.isEmpty) {
-                Button("New Customer", action: {
+                Button("New Customer") {
                     isNewCustomerModalPresented = true
-                })
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                Button("New Card", action: {
-                    isNewCardModalPresented = true
-                })
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                NavigationLink(destination: TestView()){
-                    Label("test view", systemImage: "testtube.2")
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                Button("New Card") {
+                    isNewCardModalPresented = true
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                /*NavigationLink(destination: TestView()){
+                    Label("test view", systemImage: "testtube.2")
+                }*/
                 Spacer()
             } else {
                 List {
@@ -97,133 +96,146 @@ struct SearchView: View {
                         NavigationLink(destination: AccountActionsView(customer: result)) {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(result.lastname + ", " + result.firstname).font(.title2.weight(.semibold))
-                                Label(result.phonenumber ?? "N/A", systemImage: "phone.fill")
-                                Label(result.cardnumber ?? "N/A", systemImage: "creditcard.fill")
+                                Label(result.phonenumber ?? "No phone", systemImage: "phone.fill")
+                                Label(result.cardnumber ?? "No card", systemImage: "creditcard.fill")
                             }
                             .padding()
                         }
-                        
-                        /*NavigationLink(destination: AccountActionsView(customer: result)) {
-                            //Label("Work Folder", systemImage: "folder")
-                            Text(result.lastname + ", " + result.firstname)
-                        }*/
                     }
                 }
                 .listStyle(.plain)
             }
 
         }
-        .navigationBarItems(trailing: Button("Clear token") {
-            AppVars.token = nil
+        .navigationBarItems(trailing: Menu {
+            Button(action: {
+                AppVars.token = nil
+                dismiss()
+            }) {
+                Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+            }
+            Button(action: {}){
+                Label("Send feedback", systemImage: "doc.text")
+            }
+        } label: {
+            Label("Settings", systemImage: "gearshape")
         })
         .navigationBarBackButtonHidden(true)
-        .navigationTitle("Search Customers")
-        .navigationBarTitleDisplayMode(.inline)
-        .fullScreenCover(isPresented: $isNewCustomerModalPresented, onDismiss: { dismissDialogs() }) {
-            NavigationView {
-                VStack {
-                    TextField(
-                        "Full name",
-                        value: $nameComponents,
-                        format: .name(style: .long)
-                    )
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .autocapitalization(.words)
-                    PhoneTextField(phoneNumber: $phoneNumber)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding()
-                        .background(RoundedRectangle(cornerRadius: 5).strokeBorder(Color.primary.opacity(0.5), lineWidth: 1))
-                    if (showSheetError == true) {
-                        HStack {
-                            Text(sheetErrorMessage)
-                                .padding()
-                                .foregroundColor(.red)
-                            Spacer()
+        .navigationTitle("Find Customer")
+        .fullScreenCover(isPresented: $isNewCustomerModalPresented, onDismiss: { dismissDialogs() }) { newCustomerView }
+        .fullScreenCover(isPresented: $isNewCardModalPresented, onDismiss: { dismissDialogs() }) { newCardView }
+    }
+    
+    
+    var newCardView : some View {
+        NavigationView {
+            VStack {
+                TextField("Card Number", text: $cardNumber)
+                    .textFieldStyle(CustomTextFieldStyle())
+                HStack{
+                    Spacer()
+                    Button("Cancel", action: { dismissDialogs() })
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .disabled(controlDisabled)
+                    Button("Add Card", action: {
+                        Task {
+
                         }
-                    }
-                    HStack{
-                        Spacer()
-                        Button("Cancel", action: {
-                            dismissDialogs()
-                        })
-                            .buttonStyle(.bordered)
-                            .controlSize(.large)
-                            .disabled(controlDisabled)
-                        Button("Add Customer", action: {
-                            Task {
-                                var pn: String?
-                                
-                                do {
-                                    let v = try phoneNumberKit.parse(phoneNumber)
-                                    pn = String(v.nationalNumber)
-                                }
-                                catch {
-                                    pn = nil
-                                }
-                                
-                                if (
-                                    nameComponents.familyName != nil &&
-                                    nameComponents.givenName != nil &&
-                                    pn != nil
-                                ) {
-                                    do {
-                                        let post = NewCustomer(
-                                            firstname: nameComponents.givenName!,
-                                            lastname: nameComponents.familyName!,
-                                            phonenumber: pn!
-                                        )
-                                        let res: CustomerAccount = try await fetch("/customer", body: post, method: .post)
-                                        searchText = "@\(res.id)"
-                                        dismissDialogs()
-                                    } catch {
-                                        sheetErrorMessage = "Erorr adding customer."
-                                        showSheetError = true
-                                    }
-                                } else {
-                                    sheetErrorMessage = "Missing first name, last name, or phone number."
-                                    showSheetError = true
-                                }
-                            }
-                        })
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
-                            .disabled(controlDisabled)
-                    }
-
-                    Spacer()
+                    })
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .disabled(controlDisabled)
                 }
-                .padding()
-                .navigationBarTitle("New Customer")
-                
+                Spacer()
             }
-        }
-        .fullScreenCover(isPresented: $isNewCardModalPresented) {
-            NavigationView {
-                VStack {
-                    TextField("Card Number", text: $cardNumber)
-                        .textFieldStyle(CustomTextFieldStyle())
-                    HStack{
-                        Spacer()
-                        Button("Cancel", action: { dismissDialogs() })
-                            .buttonStyle(.bordered)
-                            .controlSize(.large)
-                            .disabled(controlDisabled)
-                        Button("Add Card", action: {
-                            Task {
-
-                            }
-                        })
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
-                            .disabled(controlDisabled)
-                    }
-                    Spacer()
-                }
-                .padding()
-                .navigationBarTitle("New Card")
-            }
+            .padding()
+            .navigationBarTitle("New Card")
         }
     }
+    
+    var newCustomerView: some View {
+        NavigationView {
+            VStack {
+                TextField(
+                    "Full name",
+                    value: $nameComponents,
+                    format: .name(style: .long)
+                )
+                    .textFieldStyle(CustomTextFieldStyle())
+                    .autocapitalization(.words)
+                PhoneTextField(phoneNumber: $phoneNumber)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 5).strokeBorder(Color.primary.opacity(0.5), lineWidth: 1))
+                if (showSheetError == true) {
+                    HStack {
+                        Text(sheetErrorMessage)
+                            .padding()
+                            .foregroundColor(.red)
+                        Spacer()
+                    }
+                }
+                HStack{
+                    Spacer()
+                    Button("Cancel") {
+                        dismissDialogs()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .disabled(controlDisabled)
+                    Button("Add Customer") {
+                        Task {
+                            let phoneNumberKit = PhoneNumberKit()
+                            var pn: String?
+                            
+                            do {
+                                let v = try phoneNumberKit.parse(phoneNumber)
+                                pn = String(v.nationalNumber)
+                            }
+                            catch {
+                                pn = nil
+                            }
+                            
+                            if (
+                                nameComponents.familyName != nil &&
+                                nameComponents.givenName != nil &&
+                                pn != nil
+                            ) {
+                                do {
+                                    let post = NewCustomer(
+                                        firstname: nameComponents.givenName!,
+                                        lastname: nameComponents.familyName!,
+                                        phonenumber: pn!
+                                    )
+                                    let res: CustomerAccount = try await fetch("/customer", body: post, method: .post)
+                                    searchText = "@\(res.id)"
+                                    dismissDialogs()
+                                } catch {
+                                    sheetErrorMessage = "Erorr adding customer."
+                                    showSheetError = true
+                                }
+                            } else {
+                                sheetErrorMessage = "Missing first name, last name, or phone number."
+                                showSheetError = true
+                            }
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(controlDisabled)
+                }
+                Spacer()
+            }
+            .padding()
+            .navigationBarTitle("New Customer")
+            
+        }
+    }
+    
+    
+    
+    
 }
 
 struct SearchView_Previews: PreviewProvider {

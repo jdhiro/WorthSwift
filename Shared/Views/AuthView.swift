@@ -40,14 +40,15 @@ struct AuthView: View {
             
             VStack() {
                 NavigationLink("Work Folder", destination: SearchView(), isActive: $nextScreen).hidden()
-                Text("Worth")
-                    .font(.headline)
+                Text("Urban Coffee Lounge")
+                    .font(.largeTitle)
                 TextField("username", text: $formData.username)
                     .disableAutocorrection(true)
-                    .textFieldStyle(.roundedBorder)
+                    .padding()
+                    .overlay(RoundedRectangle(cornerRadius: 5).stroke(.black))
                 SecureField("password", text: $formData.password)
-                    .textFieldStyle(.roundedBorder)
-                
+                    .padding()
+                    .overlay(RoundedRectangle(cornerRadius: 5).stroke(.black))
                 Button(action: {
                     Task {
                         do {

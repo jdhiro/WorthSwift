@@ -20,9 +20,13 @@ struct BalanceTransactionReq: Codable {
     var description: String?
 }
 
+fileprivate let rewards: [RewardItem] = [
+    RewardItem(name: "Coffee", points: 500),
+    RewardItem(name: "Blended Drink", points: 700)
+]
+
 struct AccountActionsView: View {
-    
-    var customer: CustomerDetail
+    @State var customer: CustomerDetail // Passed in from the calling view
     
     @State var balanceCreditAmount = ""
     @State var balanceDebitAmount = ""
@@ -33,40 +37,39 @@ struct AccountActionsView: View {
     
     @State var showSuccessAlert = false
     @State var showErrorAlert = false
-    
-    let rewards: [RewardItem] = [
-        RewardItem(name: "Coffee", points: 500),
-        RewardItem(name: "Blended Drink", points: 700)
-    ]
-    
     @State var selectedReward: String? = nil
-    
-    func moneyStrToInt(_: String) {
-        
-    }
     
     func submitBalanceTransaction() {
         Task {
-            
-            let n: Decimal = try Decimal(balanceCreditAmount, format: .currency(code: "USD"))
-            //let i: Int = try Int(n)
-            print(n)
-            
-            print((n * 100 as NSDecimalNumber).intValue)
-            
-            
-            
-            /*let req = BalanceTransactionReq(
-                customerid: 1234,
-                credit: 1234,
-                debit: 1234
-            )
-            let data: CustomerDetail = try await fetch("/transaction", body: req, method: .post)*/
+            do {
+                let req = BalanceTransactionReq(
+                    customerid: customer.id,
+                    credit: try currencyStrToUInt(balanceCreditAmount),
+                    debit: try currencyStrToUInt(balanceDebitAmount)
+                )
+                let res: CustomerDetail = try await fetch("/transaction", body: req, method: .post)
+                customer = res
+                showSuccessAlert = true
+            } catch {
+                showErrorAlert = true
+                print("Failed with error \(error).")
+            }
         }
     }
     
     func submitPointTransaction() {
-        
+        showSuccessAlert = true
+        print("not implimented")
+    }
+    
+    func resetForms() {
+        balanceCreditAmount = ""
+        balanceDebitAmount = ""
+        balanceCreditAmountLast = ""
+        balanceDebitAmountLast = ""
+        showSuccessAlert = false
+        showErrorAlert = false
+        selectedReward = nil
     }
         
     var body: some View {
@@ -104,7 +107,7 @@ struct AccountActionsView: View {
                 .background(RoundedRectangle(cornerRadius: 5).stroke(.gray))
                 VStack {
                     HStack {
-                        Text("Balance \(customer.cashbalance)")
+                        Text("Balance \(currencyUIntToStr(customer.cashbalance))")
                             .font(.title2).fontWeight(.semibold)
                         Spacer()
                     }
@@ -144,12 +147,27 @@ struct AccountActionsView: View {
             Spacer()
         }
         .padding()
-        .alert("✅ Success!", isPresented: $showSuccessAlert) {
-            Button("OK", role: .cancel) { }
+        .sheet(isPresented: $showSuccessAlert, onDismiss: { resetForms() }) {
+            VStack {
+                Image("thumbs-up")
+                    .resizable()
+                    .frame(width: 500, height: 500)
+                Button(action: { showSuccessAlert.toggle() }) {
+                    Text("Done")
+                }.buttonStyle(.borderedProminent).controlSize(.large)
+                Button(action: { showSuccessAlert.toggle() }) {
+                    Text("Do More")
+                }.buttonStyle(.bordered).controlSize(.large)
+            }
+        }
+        .sheet(isPresented: $showErrorAlert, onDismiss: { resetForms() }) {
+            Text("There was an error.")
         }
         .navigationBarItems(trailing: NavigationLink(destination: HistoryView(customer: customer)) {
             Label("History", systemImage: "clock").labelStyle(TitleAndIconLabelStyle())
         })
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
         
