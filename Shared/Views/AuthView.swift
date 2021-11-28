@@ -33,22 +33,21 @@ struct AuthView: View {
         ZStack {
             Rectangle()
                 .fill(LinearGradient(
-                    gradient: Gradient(colors: [Color(red: 0.46, green: 0.50, blue: 0.60), Color(red: 0.84, green: 0.87, blue: 0.91)]),
+                    gradient: Gradient(colors: [Color(red: 0.16, green: 0.20, blue: 0.40), Color(red: 0.54, green: 0.57, blue: 0.61)]),
                     startPoint: .topTrailing,
                     endPoint: .bottomLeading
                   )).ignoresSafeArea()
             
             VStack() {
                 NavigationLink("Work Folder", destination: SearchView(), isActive: $nextScreen).hidden()
-                Text("Urban Coffee Lounge")
-                    .font(.largeTitle)
+                Image("logo").resizable().aspectRatio(contentMode: .fit)
                 TextField("username", text: $formData.username)
                     .disableAutocorrection(true)
                     .padding()
-                    .overlay(RoundedRectangle(cornerRadius: 5).stroke(.black))
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white))
                 SecureField("password", text: $formData.password)
                     .padding()
-                    .overlay(RoundedRectangle(cornerRadius: 5).stroke(.black))
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white))
                 Button(action: {
                     Task {
                         do {
@@ -63,7 +62,7 @@ struct AuthView: View {
                     Spacer()
                     Text("Sign In")
                     Spacer()
-                }.buttonStyle(.borderedProminent).controlSize(.large)
+                }.buttonStyle(.borderedProminent).controlSize(.large).tint(.gray)
                 
                 Button(action: {
                     formData.username = "jason"
@@ -72,7 +71,7 @@ struct AuthView: View {
                     Spacer()
                     Text("Do Magic")
                     Spacer()
-                }.buttonStyle(.bordered).controlSize(.large).tint(.accentColor)
+                }.buttonStyle(.borderedProminent).controlSize(.large).tint(.yellow)
                 
                 if (showError) {
                     Text("Information not correct. Try again.")
@@ -83,7 +82,7 @@ struct AuthView: View {
             }
             .frame(width: 400)
             .padding(.all)
-            .background(RoundedRectangle(cornerRadius: 10).fill(Color(red: 1, green: 1, blue: 1, opacity: 0.4)))
+            //.background(RoundedRectangle(cornerRadius: 10).fill(Color(red: 1, green: 1, blue: 1, opacity: 0.4)))
         }.onAppear() {
             if (AppVars.token != nil) {
                 nextScreen = true
