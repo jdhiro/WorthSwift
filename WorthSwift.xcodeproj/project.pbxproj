@@ -33,12 +33,9 @@
 		96CD4EEF26A15907000A75C7 /* Styles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD4EED26A15907000A75C7 /* Styles.swift */; };
 		96CD4EF826A803F6000A75C7 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD4EF726A803F6000A75C7 /* HistoryView.swift */; };
 		96CD4EF926A803F6000A75C7 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD4EF726A803F6000A75C7 /* HistoryView.swift */; };
-		96CD4EFC26AE8674000A75C7 /* NewCustomerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD4EFB26AE8674000A75C7 /* NewCustomerView.swift */; };
-		96CD4EFD26AE8674000A75C7 /* NewCustomerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD4EFB26AE8674000A75C7 /* NewCustomerView.swift */; };
-		96CD4EFF26AE8684000A75C7 /* NewCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD4EFE26AE8684000A75C7 /* NewCardView.swift */; };
-		96CD4F0026AE8684000A75C7 /* NewCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD4EFE26AE8684000A75C7 /* NewCardView.swift */; };
 		96EA5FC926BFB6BA00B37EA8 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EA5FC826BFB6BA00B37EA8 /* TestView.swift */; };
 		96EA5FCA26BFB6BA00B37EA8 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EA5FC826BFB6BA00B37EA8 /* TestView.swift */; };
+		96EB69AA26E6BF0B00D9A60D /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 96EB69A926E6BF0B00D9A60D /* Sentry */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,8 +75,6 @@
 		96B3C0CA26D371F80075EC5C /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
 		96CD4EED26A15907000A75C7 /* Styles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Styles.swift; sourceTree = "<group>"; };
 		96CD4EF726A803F6000A75C7 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
-		96CD4EFB26AE8674000A75C7 /* NewCustomerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCustomerView.swift; sourceTree = "<group>"; };
-		96CD4EFE26AE8684000A75C7 /* NewCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCardView.swift; sourceTree = "<group>"; };
 		96EA5FC826BFB6BA00B37EA8 /* TestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -90,6 +85,7 @@
 			files = (
 				96088DF026B5EF6C00127F9F /* PhoneNumberKit in Frameworks */,
 				96C8ACB9269AB8CE0002C6B2 /* KeychainAccess in Frameworks */,
+				96EB69AA26E6BF0B00D9A60D /* Sentry in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -177,8 +173,6 @@
 				96A093AC267E84E80085EBBB /* SearchView.swift */,
 				96CD4EF726A803F6000A75C7 /* HistoryView.swift */,
 				96A093AF267E9EDC0085EBBB /* AccountActionsView.swift */,
-				96CD4EFB26AE8674000A75C7 /* NewCustomerView.swift */,
-				96CD4EFE26AE8684000A75C7 /* NewCardView.swift */,
 				96EA5FC826BFB6BA00B37EA8 /* TestView.swift */,
 				96B3C0CA26D371F80075EC5C /* FeedbackView.swift */,
 			);
@@ -204,6 +198,7 @@
 			packageProductDependencies = (
 				96C8ACB8269AB8CE0002C6B2 /* KeychainAccess */,
 				96088DEF26B5EF6C00127F9F /* PhoneNumberKit */,
+				96EB69A926E6BF0B00D9A60D /* Sentry */,
 			);
 			productName = "WorthSwift (iOS)";
 			productReference = 967223CC2676C16900BB8A5A /* WorthSwift.app */;
@@ -300,6 +295,7 @@
 			packageReferences = (
 				96C8ACB7269AB8CE0002C6B2 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 				96088DEE26B5EF6C00127F9F /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
+				96EB69A826E6BF0B00D9A60D /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			productRefGroup = 967223CD2676C16900BB8A5A /* Products */;
 			projectDirPath = "";
@@ -358,9 +354,7 @@
 				96EA5FC926BFB6BA00B37EA8 /* TestView.swift in Sources */,
 				96088DF526B75A9400127F9F /* PhoneTextField.swift in Sources */,
 				967223E72676C16A00BB8A5A /* WorthSwiftApp.swift in Sources */,
-				96CD4EFF26AE8684000A75C7 /* NewCardView.swift in Sources */,
 				96CD4EF826A803F6000A75C7 /* HistoryView.swift in Sources */,
-				96CD4EFC26AE8674000A75C7 /* NewCustomerView.swift in Sources */,
 				96A093B0267E9EDC0085EBBB /* AccountActionsView.swift in Sources */,
 				96B3C0CB26D371F80075EC5C /* FeedbackView.swift in Sources */,
 				967223FF2676C48300BB8A5A /* AuthView.swift in Sources */,
@@ -378,9 +372,7 @@
 				96EA5FCA26BFB6BA00B37EA8 /* TestView.swift in Sources */,
 				96088DF626B75A9400127F9F /* PhoneTextField.swift in Sources */,
 				967223E82676C16A00BB8A5A /* WorthSwiftApp.swift in Sources */,
-				96CD4F0026AE8684000A75C7 /* NewCardView.swift in Sources */,
 				96CD4EF926A803F6000A75C7 /* HistoryView.swift in Sources */,
-				96CD4EFD26AE8674000A75C7 /* NewCustomerView.swift in Sources */,
 				96A093B1267E9EDC0085EBBB /* AccountActionsView.swift in Sources */,
 				96B3C0CC26D371F80075EC5C /* FeedbackView.swift in Sources */,
 				967224002676C48300BB8A5A /* AuthView.swift in Sources */,
@@ -835,6 +827,14 @@
 				minimumVersion = 4.0.0;
 			};
 		};
+		96EB69A826E6BF0B00D9A60D /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -847,6 +847,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 96C8ACB7269AB8CE0002C6B2 /* XCRemoteSwiftPackageReference "KeychainAccess" */;
 			productName = KeychainAccess;
+		};
+		96EB69A926E6BF0B00D9A60D /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 96EB69A826E6BF0B00D9A60D /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -20,9 +20,15 @@ struct BalanceTransactionReq: Codable {
     var description: String?
 }
 
+struct PointTransactionReq: Codable {
+    let customerid: UInt
+    let amount: UInt
+    var description: String = ""
+}
+
 fileprivate let rewards: [RewardItem] = [
-    RewardItem(name: "Coffee", points: 500),
-    RewardItem(name: "Blended Drink", points: 700)
+    RewardItem(name: "Free coffee", points: 50),
+    RewardItem(name: "Free blended drink", points: 65)
 ]
 
 struct AccountActionsView: View {
@@ -37,29 +43,43 @@ struct AccountActionsView: View {
     
     @State var showSuccessAlert = false
     @State var showErrorAlert = false
-    @State var selectedReward: String? = nil
+    
+    @State var selectedReward: String?
+    @State var selectedRewardPoints: UInt?
     
     func submitBalanceTransaction() {
         Task {
             do {
-                let req = BalanceTransactionReq(
-                    customerid: customer.id,
-                    credit: try currencyStrToUInt(balanceCreditAmount),
-                    debit: try currencyStrToUInt(balanceDebitAmount)
-                )
-                let res: CustomerDetail = try await fetch("/transaction", body: req, method: .post)
-                customer = res
-                showSuccessAlert = true
+                let creditAmt = try currencyStrToUInt(balanceCreditAmount)
+                let debitAmt = try currencyStrToUInt(balanceDebitAmount)
+                if (creditAmt > 0 || debitAmt > 0) {
+                    let req = BalanceTransactionReq(customerid: customer.id, credit: creditAmt, debit: debitAmt )
+                    let res: CustomerDetail = try await fetch("/transaction", body: req, method: .post)
+                    customer = res
+                    showSuccessAlert = true
+                }
             } catch {
                 showErrorAlert = true
-                print("Failed with error \(error).")
             }
         }
     }
     
     func submitPointTransaction() {
-        showSuccessAlert = true
-        print("not implimented")
+        // TODO: Fix this so that the backend is called with a rewardId, not a specific points amount. This is messy right now tracking points and values as two different values.
+        Task {
+            do {
+                if (selectedReward != nil && selectedRewardPoints != nil) {
+                    let amt = selectedRewardPoints!
+                    let desc = selectedReward!
+                    let req = PointTransactionReq(customerid: customer.id, amount: amt, description: desc )
+                    let res: CustomerDetail = try await fetch("/transaction/reward", body: req, method: .post)
+                    customer = res
+                    showSuccessAlert = true
+                }
+            } catch {
+                showErrorAlert = true
+            }
+        }
     }
     
     func resetForms() {
@@ -88,86 +108,93 @@ struct AccountActionsView: View {
                 Spacer()
             }
             HStack {
-                VStack {
-                    HStack {
-                        Text("Points \(customer.rewardbalance)")
-                            .font(.title2).fontWeight(.semibold)
-                        Spacer()
-                    }
-                    ForEach(rewards, id: \.self) { item in
-                        SelectionCell(reward: item, selectedReward: self.$selectedReward)
-                    }
-                    Button("Claim Reward") {
-                        showSuccessAlert = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                }
-                .padding()
-                .background(RoundedRectangle(cornerRadius: 5).stroke(.gray))
-                VStack {
-                    HStack {
-                        Text("Balance \(currencyUIntToStr(customer.cashbalance))")
-                            .font(.title2).fontWeight(.semibold)
-                        Spacer()
-                    }
-                    TextField("Credit", text: $balanceCreditAmount)
-                        .padding()
-                        .background(RoundedRectangle(cornerRadius: 10).stroke(.green))
-                        .keyboardType(.numberPad)
-                        // This is a very hacky way to enforce money-like values into the input.
-                        .onReceive(Just(balanceCreditAmount)) { newValue in
-                            let b: Bool = newValue.range(of: #"^\d*\.?\d{0,2}$"#, options: .regularExpression) != nil
-                            if b == true {
-                                self.balanceCreditAmountLast = self.balanceCreditAmount
-                            } else {
-                                self.balanceCreditAmount = self.balanceCreditAmountLast
-                            }
-                        }
-                    TextField("Debit", text: $balanceDebitAmount)
-                        .padding()
-                        .background(RoundedRectangle(cornerRadius: 10).stroke(.red))
-                        .keyboardType(.numberPad)
-                        // This is the same hack used above.
-                        .onReceive(Just(balanceDebitAmount)) { newValue in
-                            let b: Bool = newValue.range(of: #"^\d*\.?\d{0,2}$"#, options: .regularExpression) != nil
-                            if b == true {
-                                self.balanceDebitAmountLast = self.balanceDebitAmount
-                            } else {
-                                self.balanceDebitAmount = self.balanceDebitAmountLast
-                            }
-                        }
-                    Button("Submit Transaction") { submitBalanceTransaction() }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                }
-                .padding()
-                .background(RoundedRectangle(cornerRadius: 5).stroke(.gray))
+                pointsBox
+                balanceBox
             }
             Spacer()
         }
         .padding()
-        .sheet(isPresented: $showSuccessAlert, onDismiss: { resetForms() }) {
-            VStack {
-                Image("thumbs-up")
-                    .resizable()
-                    .frame(width: 500, height: 500)
-                Button(action: { showSuccessAlert.toggle() }) {
-                    Text("Done")
-                }.buttonStyle(.borderedProminent).controlSize(.large)
-                Button(action: { showSuccessAlert.toggle() }) {
-                    Text("Do More")
-                }.buttonStyle(.bordered).controlSize(.large)
-            }
-        }
-        .sheet(isPresented: $showErrorAlert, onDismiss: { resetForms() }) {
-            Text("There was an error.")
-        }
+        .sheet(isPresented: $showSuccessAlert, onDismiss: { resetForms() }) { successSheetView }
+        .sheet(isPresented: $showErrorAlert, onDismiss: { resetForms() }) { errorSheetView }
         .navigationBarItems(trailing: NavigationLink(destination: HistoryView(customer: customer)) {
             Label("History", systemImage: "clock").labelStyle(TitleAndIconLabelStyle())
         })
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    var pointsBox : some View {
+        VStack {
+            HStack {
+                Text("Points \(customer.rewardbalance)")
+                    .font(.title2).fontWeight(.semibold)
+                Spacer()
+            }
+            ForEach(rewards, id: \.self) { item in
+                SelectionCell(reward: item, selectedReward: self.$selectedReward, selectedRewardPoints: self.$selectedRewardPoints)
+            }
+            Button("Claim Reward") { submitPointTransaction() }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        }
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 5).stroke(.gray))
+    }
+    
+    var balanceBox : some View {
+        VStack {
+            HStack {
+                Text("Balance \(currencyUIntToStr(customer.cashbalance))")
+                    .font(.title2).fontWeight(.semibold)
+                Spacer()
+            }
+            TextField("Credit", text: $balanceCreditAmount)
+                .padding()
+                .background(RoundedRectangle(cornerRadius: 10).stroke(.green))
+                .keyboardType(.numberPad)
+                // This is a very hacky way to enforce money-like values into the input.
+                .onReceive(Just(balanceCreditAmount)) { newValue in
+                    let b: Bool = newValue.range(of: #"^\d*\.?\d{0,2}$"#, options: .regularExpression) != nil
+                    if b == true {
+                        self.balanceCreditAmountLast = self.balanceCreditAmount
+                    } else {
+                        self.balanceCreditAmount = self.balanceCreditAmountLast
+                    }
+                }
+            TextField("Debit", text: $balanceDebitAmount)
+                .padding()
+                .background(RoundedRectangle(cornerRadius: 10).stroke(.red))
+                .keyboardType(.numberPad)
+                // This is the same hack used above.
+                .onReceive(Just(balanceDebitAmount)) { newValue in
+                    let b: Bool = newValue.range(of: #"^\d*\.?\d{0,2}$"#, options: .regularExpression) != nil
+                    if b == true {
+                        self.balanceDebitAmountLast = self.balanceDebitAmount
+                    } else {
+                        self.balanceDebitAmount = self.balanceDebitAmountLast
+                    }
+                }
+            Button("Submit Transaction") { submitBalanceTransaction() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+        }
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 5).stroke(.gray))
+    }
+    
+    var successSheetView : some View {
+        VStack {
+            Image("thumbs-up")
+                .resizable()
+                .frame(width: 500, height: 500)
+            Button(action: { showSuccessAlert.toggle() }) {
+                Text("Done")
+            }.buttonStyle(.borderedProminent).controlSize(.large)
+        }
+    }
+    
+    var errorSheetView: some View {
+        Text("There was an error submitting the transaction.")
     }
 
         
@@ -176,6 +203,7 @@ struct AccountActionsView: View {
 struct SelectionCell: View {
     let reward: RewardItem
     @Binding var selectedReward: String?
+    @Binding var selectedRewardPoints: UInt?
 
     var body: some View {
         HStack {
@@ -191,11 +219,12 @@ struct SelectionCell: View {
         .border(reward.name == selectedReward ? Color.accentColor : Color.black)
         .foregroundColor(reward.name == selectedReward ? Color.accentColor : Color.black)
         .onTapGesture {
-            print("rewarded!")
             if (self.selectedReward == self.reward.name) {
                 self.selectedReward = nil
+                self.selectedRewardPoints = nil
             } else {
                 self.selectedReward = self.reward.name
+                self.selectedRewardPoints = self.reward.points
             }
         }
     }

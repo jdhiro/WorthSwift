@@ -47,7 +47,14 @@ enum HTTPMethods: String {
 }
 
 func fetch<T: Encodable, R: Decodable>(_ path: String, body: T?, method: HTTPMethods = .get) async throws -> R {
-    let url = URL(string: Constants.baseURL + path)!
+    let escapedPath = path.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!
+    let fullUrl: String = Constants.baseURL + escapedPath
+    print("xxx", fullUrl)
+    let url = URL(string: fullUrl)!
+    
+    var components = URLComponents()
+    components.scheme = "https"
+    components.host = Constants.baseURL
         
     var request = URLRequest(url: url)
     request.httpMethod = method.rawValue

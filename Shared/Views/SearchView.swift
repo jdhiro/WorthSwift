@@ -27,6 +27,7 @@ struct NewCustomer: Codable {
 
 struct NewCard: Codable {
     let cardnumber: String
+    let amount: UInt
 }
 
 struct CustomerAccount: Codable {
@@ -36,6 +37,11 @@ struct CustomerAccount: Codable {
 struct SearchView: View {
     
     @Environment(\.dismiss) var dismiss
+    
+    enum Field: Hashable {
+        case search
+    }
+    @FocusState var focusedField: Field?
     
     @State var searchText: String = ""
     @State var searchResults: [CustomerDetail] = []
@@ -59,16 +65,26 @@ struct SearchView: View {
         showSheetError = false
         sheetErrorMessage = ""
         
+        nameComponents = PersonNameComponents()
     }
     
     var body: some View {
         VStack {
             TextField("Search", text: $searchText)
+                .focused($focusedField, equals: .search)
                 .modifier(TextFieldClearButton(text: $searchText))
                 .autocapitalization(.allCharacters)
                 .font(.largeTitle.weight(.semibold))
                 .padding()
-                .overlay(RoundedRectangle(cornerRadius: 20).stroke(.black, lineWidth: 2))
+                //.overlay(RoundedRectangle(cornerRadius: 20).stroke(.black, lineWidth: 2))
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Color.primary, lineWidth: 2)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color(.systemGray5))
+                        )
+                )
                 .padding()
                 .onChange(of: searchText) { str in
                     Task {
@@ -120,12 +136,29 @@ struct SearchView: View {
         } label: {
             Label("Settings", systemImage: "gearshape")
         })
+        .onAppear() { focusedField = .search }
         .navigationBarBackButtonHidden(true)
         .navigationTitle("Find Customer")
+        .onDisappear() { searchText = "" }
         .fullScreenCover(isPresented: $isNewCustomerModalPresented, onDismiss: { dismissDialogs() }) { newCustomerView }
         .fullScreenCover(isPresented: $isNewCardModalPresented, onDismiss: { dismissDialogs() }) { newCardView }
     }
     
+    func addCard() async { //TODO: always getting an error here
+        print("something")
+        do {
+            let post = NewCard(cardnumber: cardNumber, amount: 0)
+            print(post)
+            let res: CustomerAccount = try await fetch("/card", body: post, method: .post)
+            print(res)
+            searchText = "@\(res.id)"
+            dismissDialogs()
+        } catch {
+            print("error")
+            sheetErrorMessage = "Erorr adding card."
+            showSheetError = true
+        }
+    }
     
     var newCardView : some View {
         NavigationView {
@@ -140,7 +173,7 @@ struct SearchView: View {
                         .disabled(controlDisabled)
                     Button("Add Card", action: {
                         Task {
-
+                            await addCard()
                         }
                     })
                         .buttonStyle(.borderedProminent)
@@ -154,11 +187,47 @@ struct SearchView: View {
         }
     }
     
+    func addCustomer() async {
+        let phoneNumberKit = PhoneNumberKit()
+        var pn: String?
+        
+        do {
+            let v = try phoneNumberKit.parse(phoneNumber)
+            pn = String(v.nationalNumber)
+        }
+        catch {
+            pn = nil
+        }
+        
+        if (
+            nameComponents.familyName != nil &&
+            nameComponents.givenName != nil &&
+            pn != nil
+        ) {
+            do {
+                let post = NewCustomer(
+                    firstname: nameComponents.givenName!,
+                    lastname: nameComponents.familyName!,
+                    phonenumber: pn!
+                )
+                let res: CustomerAccount = try await fetch("/customer", body: post, method: .post)
+                searchText = "@\(res.id)"
+                dismissDialogs()
+            } catch {
+                sheetErrorMessage = "Erorr adding customer."
+                showSheetError = true
+            }
+        } else {
+            sheetErrorMessage = "Missing first name, last name, or phone number."
+            showSheetError = true
+        }
+    }
+    
     var newCustomerView: some View {
         NavigationView {
             VStack {
                 TextField(
-                    "Full name",
+                    "First & last name",
                     value: $nameComponents,
                     format: .name(style: .long)
                 )
@@ -186,39 +255,7 @@ struct SearchView: View {
                     .disabled(controlDisabled)
                     Button("Add Customer") {
                         Task {
-                            let phoneNumberKit = PhoneNumberKit()
-                            var pn: String?
-                            
-                            do {
-                                let v = try phoneNumberKit.parse(phoneNumber)
-                                pn = String(v.nationalNumber)
-                            }
-                            catch {
-                                pn = nil
-                            }
-                            
-                            if (
-                                nameComponents.familyName != nil &&
-                                nameComponents.givenName != nil &&
-                                pn != nil
-                            ) {
-                                do {
-                                    let post = NewCustomer(
-                                        firstname: nameComponents.givenName!,
-                                        lastname: nameComponents.familyName!,
-                                        phonenumber: pn!
-                                    )
-                                    let res: CustomerAccount = try await fetch("/customer", body: post, method: .post)
-                                    searchText = "@\(res.id)"
-                                    dismissDialogs()
-                                } catch {
-                                    sheetErrorMessage = "Erorr adding customer."
-                                    showSheetError = true
-                                }
-                            } else {
-                                sheetErrorMessage = "Missing first name, last name, or phone number."
-                                showSheetError = true
-                            }
+                            await addCustomer()
                         }
                     }
                     .buttonStyle(.borderedProminent)
