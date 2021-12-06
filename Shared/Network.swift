@@ -93,19 +93,3 @@ func fetch<T: Encodable, R: Decodable>(
 func fetch<R: Decodable>(_ path: String, queryItems: [URLQueryItem] = [], method: HTTPMethods = .get) async throws -> R {
     return try await fetch(path, queryItems: queryItems, body: EmptyBody(), method: method)
 }
-
-func fetch(_ path: String, method: HTTPMethods = .get) async throws -> String {
-    let url = URL(string: Constants.baseURL + path)!
-        
-    var request = URLRequest(url: url)
-    request.httpMethod = method.rawValue
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-    if (AppVars.token != nil) {
-        request.setValue("Bearer " + AppVars.token!, forHTTPHeaderField: "Authorization")
-    }
-    
-    let (data, _) = try await URLSession.shared.data(for: request)
-    let dataString = String(data: data, encoding: String.Encoding.utf8)
-    return dataString!
-}
