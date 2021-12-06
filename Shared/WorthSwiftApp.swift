@@ -13,10 +13,10 @@ import KeychainAccess
 // Althought not needed for SwiftUI apps, create a AppDelegate here that will be imported into the main app via an adapter.
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        SentrySDK.start { options in
+        /*SentrySDK.start { options in
             options.dsn = "https://76c777eb58ad41ae851250a46330149e@o218740.ingest.sentry.io/5948174"
             options.debug = true // Enabled debug when first installing is always helpful
-        }
+        }*/
         return true
     }
 }
@@ -37,7 +37,8 @@ struct WorthSwiftApp: App {
 
 struct Constants {
     static let httpScheme = "http"
-    static let httpHost = 127.0.0.1:8081
+    static let httpHost = "127.0.0.1"
+    static let httpPort = 8081
     
     static let baseURL = "http://127.0.0.1:8081"
 }
