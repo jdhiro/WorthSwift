@@ -88,7 +88,7 @@ struct SearchView: View {
                 .padding()
                 .onChange(of: searchText) { str in
                     Task {
-                        searchResults = try await fetch("/search?q=\(str)")
+                        searchResults = try await fetch("/search", queryItems: [URLQueryItem(name: "q", value: str)])
                     }
                 }
             if (searchResults.isEmpty) {

@@ -8,7 +8,8 @@
 import Foundation
 
 
-/// Add JSONDecoder.DateDecodingStrategy.iso8601withFractionalSeconds to deal with the fact that our service supports fractional seconds.cu
+/// Add JSONDecoder.DateDecodingStrategy.iso8601withFractionalSeconds to deal with the fact that our service supports fractional seconds.
+/// Ideally in the future the service should switch to seconds or offer an option. There is a lot of odd code here in the app to work around it.
 /// https://gist.github.com/Ikloo/e0011c99665dff0dd8c4d116150f9129
 extension Formatter {
     static let iso8601: (regular: ISO8601DateFormatter, withFractionalSeconds: DateFormatter) = {
@@ -46,29 +47,37 @@ enum HTTPMethods: String {
     case get, head, post, put, delete, connect, options, trace, patch
 }
 
-func fetch<T: Encodable, R: Decodable>(_ path: String, body: T?, method: HTTPMethods = .get) async throws -> R {
-    let escapedPath = path.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)!
-    let fullUrl: String = Constants.baseURL + escapedPath
-    print("xxx", fullUrl)
-    let url = URL(string: fullUrl)!
+/// Because we cannot pass an optional generic in a method signature, we have to "invent" a fake empty one and pass it along when there is no body. This is also why we have an overloaded method signature.
+private struct EmptyBody: Codable { }
+
+/// Standard fetch function.
+func fetch<T: Encodable, R: Decodable>(
+    _ path: String,
+    queryItems: [URLQueryItem] = [],
+    body: T?,
+    method: HTTPMethods = .get) async throws -> R {
     
     var components = URLComponents()
-    components.scheme = "https"
-    components.host = Constants.baseURL
+    components.scheme = Constants.httpScheme
+    components.host = Constants.httpHost
+    components.port = Constants.httpPort
+    components.path = path
+    components.queryItems = queryItems
+
         
-    var request = URLRequest(url: url)
+    var request = URLRequest(url: components.url!)
     request.httpMethod = method.rawValue
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    
-    if body != nil {
-        // Process the body, and add it to the request.
+        
+    if body is EmptyBody {
+        // Do nothing.
+    } else {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         let encodedBody = try encoder.encode(body)
         request.httpBody = encodedBody
     }
-
-
+        
     if (AppVars.token != nil) {
         request.setValue("Bearer " + AppVars.token!, forHTTPHeaderField: "Authorization")
     }
@@ -80,12 +89,9 @@ func fetch<T: Encodable, R: Decodable>(_ path: String, body: T?, method: HTTPMet
     return decodedData
 }
 
-func fetch<R: Decodable>(_ path: String, method: HTTPMethods = .get) async throws -> R {
-    /// This is a workaround for the fact that Swift doesn't seem to support optional generics in its method calls. You have to create an optional
-    /// type to call nil on.
-    /// https://forums.swift.org/t/generic-function-that-requires-the-generic-type-to-be-non-optional/30936
-    let fakeNil: Int? = nil
-    return try await fetch(path, body: fakeNil, method: method)
+/// Fetch overload to deal with the case of a missing generic body type.
+func fetch<R: Decodable>(_ path: String, queryItems: [URLQueryItem] = [], method: HTTPMethods = .get) async throws -> R {
+    return try await fetch(path, queryItems: queryItems, body: EmptyBody(), method: method)
 }
 
 func fetch(_ path: String, method: HTTPMethods = .get) async throws -> String {
