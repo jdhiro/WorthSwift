@@ -31,6 +31,8 @@ fileprivate let rewards: [RewardItem] = [
     RewardItem(name: "Free blended drink", points: 65)
 ]
 
+var inputDisabled = false
+
 struct AccountActionsView: View {
     @State var customer: CustomerDetail // Passed in from the calling view
     
@@ -50,6 +52,7 @@ struct AccountActionsView: View {
     func submitBalanceTransaction() {
         Task {
             do {
+                inputDisabled = true
                 let creditAmt = try currencyStrToUInt(balanceCreditAmount)
                 let debitAmt = try currencyStrToUInt(balanceDebitAmount)
                 if (creditAmt > 0 || debitAmt > 0) {
@@ -58,8 +61,10 @@ struct AccountActionsView: View {
                     customer = res
                     showSuccessAlert = true
                 }
+                inputDisabled = false
             } catch {
                 showErrorAlert = true
+                inputDisabled = false
             }
         }
     }
@@ -68,6 +73,7 @@ struct AccountActionsView: View {
         // TODO: Fix this so that the backend is called with a rewardId, not a specific points amount. This is messy right now tracking points and values as two different values.
         Task {
             do {
+                inputDisabled = true
                 if (selectedReward != nil && selectedRewardPoints != nil) {
                     let amt = selectedRewardPoints!
                     let desc = selectedReward!
@@ -76,8 +82,10 @@ struct AccountActionsView: View {
                     customer = res
                     showSuccessAlert = true
                 }
+                inputDisabled = false
             } catch {
                 showErrorAlert = true
+                inputDisabled = false
             }
         }
     }
@@ -108,7 +116,9 @@ struct AccountActionsView: View {
                 Spacer()
             }
             HStack {
-                pointsBox
+                if(customer.rewardbalance != nil) {
+                    pointsBox
+                }
                 balanceBox
             }
             Spacer()
@@ -126,7 +136,7 @@ struct AccountActionsView: View {
     var pointsBox : some View {
         VStack {
             HStack {
-                Text("Points \(customer.rewardbalance)")
+                Text("Points \(customer.rewardbalance!)")
                     .font(.title2).fontWeight(.semibold)
                 Spacer()
             }
@@ -136,6 +146,7 @@ struct AccountActionsView: View {
             Button("Claim Reward") { submitPointTransaction() }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .disabled(inputDisabled)
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 5).stroke(.gray))
@@ -177,6 +188,7 @@ struct AccountActionsView: View {
             Button("Submit Transaction") { submitBalanceTransaction() }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .disabled(inputDisabled)
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 5).stroke(.gray))

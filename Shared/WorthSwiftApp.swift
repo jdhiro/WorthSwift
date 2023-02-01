@@ -35,14 +35,19 @@ struct WorthSwiftApp: App {
 
 // My App Stuff
 
+/*
 struct Constants {
     static let httpScheme = "http"
     static let httpHost = "127.0.0.1"
     static let httpPort = 8081
-    
-    static let baseURL = "http://127.0.0.1:8081"
 }
+ */
 
+struct Constants {
+    static let httpScheme = "https"
+    static let httpHost = "api.wrth.io"
+    //static let httpPort = 80
+}
 
 private let keychain = Keychain(service: "io.hiro.worth")
 

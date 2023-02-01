@@ -43,6 +43,7 @@ struct AuthView: View {
                 Image("logo").resizable().aspectRatio(contentMode: .fit)
                 TextField("username", text: $formData.username)
                     .disableAutocorrection(true)
+                    .autocapitalization(.none)
                     .padding()
                     .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white))
                 SecureField("password", text: $formData.password)
@@ -63,15 +64,6 @@ struct AuthView: View {
                     Text("Sign In")
                     Spacer()
                 }.buttonStyle(.borderedProminent).controlSize(.large).tint(.gray)
-                
-                Button(action: {
-                    formData.username = "jason"
-                    formData.password = "DyzRvqZcYrq2BqJa"
-                }) {
-                    Spacer()
-                    Text("Do Magic")
-                    Spacer()
-                }.buttonStyle(.borderedProminent).controlSize(.large).tint(.yellow)
                 
                 if (showError) {
                     Text("Information not correct. Try again.")

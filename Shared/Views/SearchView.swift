@@ -15,7 +15,7 @@ struct CustomerDetail: Codable, Hashable {
     let lastname: String
     let cardnumber: String?
     let email: String?
-    let rewardbalance: UInt
+    let rewardbalance: UInt?
     let cashbalance: UInt
 }
 
@@ -25,8 +25,8 @@ struct NewCustomer: Codable {
     let phonenumber: String
 }
 
-struct NewCard: Codable {
-    let cardnumber: String
+struct NewCards: Codable {
+    let cards: [String]
     let amount: UInt
 }
 
@@ -73,6 +73,7 @@ struct SearchView: View {
             TextField("Search", text: $searchText)
                 .focused($focusedField, equals: .search)
                 .modifier(TextFieldClearButton(text: $searchText))
+                .disableAutocorrection(true)
                 .autocapitalization(.allCharacters)
                 .font(.largeTitle.weight(.semibold))
                 .padding()
@@ -144,10 +145,9 @@ struct SearchView: View {
         .fullScreenCover(isPresented: $isNewCardModalPresented, onDismiss: { dismissDialogs() }) { newCardView }
     }
     
-    func addCard() async { //TODO: always getting an error here
-        print("something")
+    func addCard() async {
         do {
-            let post = NewCard(cardnumber: cardNumber, amount: 0)
+            let post = NewCards(cards: [cardNumber], amount: 0)
             print(post)
             let res: CustomerAccount = try await fetch("/card", body: post, method: .post)
             print(res)

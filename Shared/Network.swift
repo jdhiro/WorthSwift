@@ -60,7 +60,7 @@ func fetch<T: Encodable, R: Decodable>(
     var components = URLComponents()
     components.scheme = Constants.httpScheme
     components.host = Constants.httpHost
-    components.port = Constants.httpPort
+    //components.port = Constants.httpPort
     components.path = path
     components.queryItems = queryItems
 
@@ -85,6 +85,7 @@ func fetch<T: Encodable, R: Decodable>(
     let (data, _) = try await URLSession.shared.data(for: request)
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601withFractionalSeconds
+    // TODO: Catch and handle this try block.
     let decodedData = try decoder.decode(R.self, from: data)
     return decodedData
 }
