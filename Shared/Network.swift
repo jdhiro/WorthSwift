@@ -51,61 +51,32 @@ enum HTTPMethods: String {
 private struct EmptyBody: Codable { }
 
 private struct SignInRequestBody: Codable {
-    let email: String
+    let username: String
     let password: String
 }
 
 private struct SignInResponseBody: Codable {
-    let token: String?
+    let accessToken: String?
+    let refreshToken: String?
+}
+
+private struct RefreshRequestBody: Codable {
+    let refreshToken: String
+}
+
+private struct RefreshResponseBody: Codable {
+    let accessToken: String?
+    let refreshToken: String?
+}
+
+struct AuthTokens {
+    let accessToken: String
+    let refreshToken: String
 }
 
 enum AuthError: Error {
     case invalidResponse
     case missingToken
-}
-
-private func extractCookieValue(_ name: String, from setCookie: String) -> String? {
-    guard let nameRange = setCookie.range(of: "\(name)=") else {
-        return nil
-    }
-    let valueStart = nameRange.upperBound
-    let remainder = setCookie[valueStart...]
-    let valueEnd = remainder.firstIndex(of: ";") ?? remainder.endIndex
-    return String(remainder[..<valueEnd])
-}
-
-private func sessionTokenFromResponse(_ response: HTTPURLResponse) -> String? {
-    if let headerValue = response.value(forHTTPHeaderField: "Set-Cookie") ??
-        response.value(forHTTPHeaderField: "set-cookie"),
-        let token = extractCookieValue("__Secure-neon-auth.session_token", from: headerValue) ??
-        extractCookieValue("neon-auth.session_token", from: headerValue) {
-        return token
-    }
-
-    var setCookieValues: [String] = []
-    for (key, value) in response.allHeaderFields {
-        guard let keyString = key as? String else {
-            continue
-        }
-        if keyString.lowercased() == "set-cookie" {
-            if let stringValue = value as? String {
-                setCookieValues.append(stringValue)
-            } else if let arrayValue = value as? [Any] {
-                setCookieValues.append(contentsOf: arrayValue.map { String(describing: $0) })
-            } else {
-                setCookieValues.append(String(describing: value))
-            }
-        }
-    }
-
-    let combinedSetCookie = setCookieValues.joined(separator: ",")
-    if let token = extractCookieValue("__Secure-neon-auth.session_token", from: combinedSetCookie) {
-        return token
-    }
-    if let token = extractCookieValue("neon-auth.session_token", from: combinedSetCookie) {
-        return token
-    }
-    return nil
 }
 
 private func makeURLComponents(path: String, queryItems: [URLQueryItem]) -> URLComponents {
@@ -123,30 +94,48 @@ private func makeURLComponents(path: String, queryItems: [URLQueryItem]) -> URLC
     return components
 }
 
-func signIn(email: String, password: String) async throws -> String {
-    let body = SignInRequestBody(email: email, password: password)
-    let (data, response) = try await fetchRaw("/auth/sign-in/email", body: body, method: .post)
+func signIn(username: String, password: String) async throws -> AuthTokens {
+    let body = SignInRequestBody(username: username.lowercased(), password: password)
+    let (data, response) = try await fetchRaw("/auth/sign-in", body: body, method: .post, allowRefresh: false)
     if !(200...299).contains(response.statusCode) {
         throw AuthError.invalidResponse
     }
-    if let token = response.value(forHTTPHeaderField: "set-auth-jwt") ?? response.value(forHTTPHeaderField: "set-auth-token") {
-        return token
-    }
-    if let token = sessionTokenFromResponse(response) {
-        return token
-    }
     if let body = try? JSONDecoder().decode(SignInResponseBody.self, from: data),
-       let token = body.token {
-        return token
+       let accessToken = body.accessToken,
+       let refreshToken = body.refreshToken {
+        return AuthTokens(accessToken: accessToken, refreshToken: refreshToken)
     }
     throw AuthError.missingToken
+}
+
+private func refreshSession() async throws -> Bool {
+    guard let refreshToken = AppVars.refreshToken else {
+        return false
+    }
+
+    let body = RefreshRequestBody(refreshToken: refreshToken)
+    let (data, response) = try await fetchRaw("/auth/refresh", body: body, method: .post, allowRefresh: false)
+    if !(200...299).contains(response.statusCode) {
+        return false
+    }
+
+    if let decoded = try? JSONDecoder().decode(RefreshResponseBody.self, from: data),
+       let accessToken = decoded.accessToken,
+       let newRefreshToken = decoded.refreshToken {
+        AppVars.token = accessToken
+        AppVars.refreshToken = newRefreshToken
+        return true
+    }
+
+    return false
 }
 
 func fetchRaw<T: Encodable>(
     _ path: String,
     queryItems: [URLQueryItem] = [],
     body: T?,
-    method: HTTPMethods = .get) async throws -> (Data, HTTPURLResponse) {
+    method: HTTPMethods = .get,
+    allowRefresh: Bool = true) async throws -> (Data, HTTPURLResponse) {
     
     let components = makeURLComponents(path: path, queryItems: queryItems)
     guard let url = components.url else {
@@ -185,6 +174,12 @@ func fetchRaw<T: Encodable>(
     print("HEADERS", httpResponse.allHeaderFields)
     print("BODY", String(data: data, encoding: .utf8) ?? "<non-utf8>")
 #endif
+    if httpResponse.statusCode == 401 && allowRefresh {
+        if try await refreshSession() {
+            return try await fetchRaw(path, queryItems: queryItems, body: body, method: method, allowRefresh: false)
+        }
+    }
+
     return (data, httpResponse)
 }
 

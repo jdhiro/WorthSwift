@@ -8,9 +8,9 @@
 import SwiftUI
 import KeychainAccess
 
-/// Email and password, to be convert to JSON object for authenticating the user.
+/// Username and password, to be convert to JSON object for authenticating the user.
 struct SignInRequest: Codable {
-    var email: String = ""
+    var username: String = ""
     var password: String = ""
 }
 
@@ -36,11 +36,10 @@ struct AuthView: View {
             VStack() {
                 NavigationLink("Work Folder", destination: SearchView(), isActive: $nextScreen).hidden()
                 Image("logo").resizable().aspectRatio(contentMode: .fit)
-                TextField("email", text: $formData.email)
+                TextField("username", text: $formData.username)
                     .disableAutocorrection(true)
                     .autocapitalization(.none)
-                    .textContentType(.emailAddress)
-                    .keyboardType(.emailAddress)
+                    .textContentType(.username)
                     .padding()
                     .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white))
                 SecureField("password", text: $formData.password)
@@ -49,8 +48,9 @@ struct AuthView: View {
                 Button(action: {
                     Task {
                         do {
-                            let token = try await signIn(email: formData.email, password: formData.password)
-                            AppVars.token = token
+                            let tokens = try await signIn(username: formData.username, password: formData.password)
+                            AppVars.token = tokens.accessToken
+                            AppVars.refreshToken = tokens.refreshToken
                             nextScreen = true
                         } catch {
                             showError = true
@@ -92,4 +92,3 @@ struct AuthView_Previews: PreviewProvider {
         }
     }
 }
-

@@ -57,6 +57,15 @@ struct AppVars {
             keychain["app-token"] = str
         }
     }
+
+    static var refreshToken: String? {
+        get {
+            return keychain["app-refresh-token"]
+        }
+        set(str) {
+            keychain["app-refresh-token"] = str
+        }
+    }
     
 }
 

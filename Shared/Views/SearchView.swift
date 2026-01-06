@@ -127,6 +127,7 @@ struct SearchView: View {
         .navigationBarItems(trailing: Menu {
             Button(action: {
                 AppVars.token = nil
+                AppVars.refreshToken = nil
                 dismiss()
             }) {
                 Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
