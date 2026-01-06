@@ -35,7 +35,6 @@
 		96CD4EF926A803F6000A75C7 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96CD4EF726A803F6000A75C7 /* HistoryView.swift */; };
 		96EA5FC926BFB6BA00B37EA8 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EA5FC826BFB6BA00B37EA8 /* TestView.swift */; };
 		96EA5FCA26BFB6BA00B37EA8 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EA5FC826BFB6BA00B37EA8 /* TestView.swift */; };
-		96EB69AA26E6BF0B00D9A60D /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 96EB69A926E6BF0B00D9A60D /* Sentry */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,7 +84,6 @@
 			files = (
 				96088DF026B5EF6C00127F9F /* PhoneNumberKit in Frameworks */,
 				96C8ACB9269AB8CE0002C6B2 /* KeychainAccess in Frameworks */,
-				96EB69AA26E6BF0B00D9A60D /* Sentry in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -198,7 +196,6 @@
 			packageProductDependencies = (
 				96C8ACB8269AB8CE0002C6B2 /* KeychainAccess */,
 				96088DEF26B5EF6C00127F9F /* PhoneNumberKit */,
-				96EB69A926E6BF0B00D9A60D /* Sentry */,
 			);
 			productName = "WorthSwift (iOS)";
 			productReference = 967223CC2676C16900BB8A5A /* WorthSwift.app */;
@@ -295,7 +292,6 @@
 			packageReferences = (
 				96C8ACB7269AB8CE0002C6B2 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 				96088DEE26B5EF6C00127F9F /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
-				96EB69A826E6BF0B00D9A60D /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			productRefGroup = 967223CD2676C16900BB8A5A /* Products */;
 			projectDirPath = "";
@@ -831,14 +827,6 @@
 				minimumVersion = 4.0.0;
 			};
 		};
-		96EB69A826E6BF0B00D9A60D /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 7.0.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -851,11 +839,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 96C8ACB7269AB8CE0002C6B2 /* XCRemoteSwiftPackageReference "KeychainAccess" */;
 			productName = KeychainAccess;
-		};
-		96EB69A926E6BF0B00D9A60D /* Sentry */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 96EB69A826E6BF0B00D9A60D /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
-			productName = Sentry;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

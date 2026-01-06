@@ -50,22 +50,110 @@ enum HTTPMethods: String {
 /// Because we cannot pass an optional generic in a method signature, we have to "invent" a fake empty one and pass it along when there is no body. This is also why we have an overloaded method signature.
 private struct EmptyBody: Codable { }
 
-/// Standard fetch function.
-func fetch<T: Encodable, R: Decodable>(
-    _ path: String,
-    queryItems: [URLQueryItem] = [],
-    body: T?,
-    method: HTTPMethods = .get) async throws -> R {
-    
+private struct SignInRequestBody: Codable {
+    let email: String
+    let password: String
+}
+
+private struct SignInResponseBody: Codable {
+    let token: String?
+}
+
+enum AuthError: Error {
+    case invalidResponse
+    case missingToken
+}
+
+private func extractCookieValue(_ name: String, from setCookie: String) -> String? {
+    guard let nameRange = setCookie.range(of: "\(name)=") else {
+        return nil
+    }
+    let valueStart = nameRange.upperBound
+    let remainder = setCookie[valueStart...]
+    let valueEnd = remainder.firstIndex(of: ";") ?? remainder.endIndex
+    return String(remainder[..<valueEnd])
+}
+
+private func sessionTokenFromResponse(_ response: HTTPURLResponse) -> String? {
+    if let headerValue = response.value(forHTTPHeaderField: "Set-Cookie") ??
+        response.value(forHTTPHeaderField: "set-cookie"),
+        let token = extractCookieValue("__Secure-neon-auth.session_token", from: headerValue) ??
+        extractCookieValue("neon-auth.session_token", from: headerValue) {
+        return token
+    }
+
+    var setCookieValues: [String] = []
+    for (key, value) in response.allHeaderFields {
+        guard let keyString = key as? String else {
+            continue
+        }
+        if keyString.lowercased() == "set-cookie" {
+            if let stringValue = value as? String {
+                setCookieValues.append(stringValue)
+            } else if let arrayValue = value as? [Any] {
+                setCookieValues.append(contentsOf: arrayValue.map { String(describing: $0) })
+            } else {
+                setCookieValues.append(String(describing: value))
+            }
+        }
+    }
+
+    let combinedSetCookie = setCookieValues.joined(separator: ",")
+    if let token = extractCookieValue("__Secure-neon-auth.session_token", from: combinedSetCookie) {
+        return token
+    }
+    if let token = extractCookieValue("neon-auth.session_token", from: combinedSetCookie) {
+        return token
+    }
+    return nil
+}
+
+private func makeURLComponents(path: String, queryItems: [URLQueryItem]) -> URLComponents {
     var components = URLComponents()
     components.scheme = Constants.httpScheme
     components.host = Constants.httpHost
-    //components.port = Constants.httpPort
-    components.path = path
-    components.queryItems = queryItems
+    if let port = Constants.httpPort {
+        components.port = port
+    }
+    let normalizedPath = path.hasPrefix("/") ? path : "/" + path
+    components.path = Constants.apiBasePath + normalizedPath
+    if !queryItems.isEmpty {
+        components.queryItems = queryItems
+    }
+    return components
+}
 
+func signIn(email: String, password: String) async throws -> String {
+    let body = SignInRequestBody(email: email, password: password)
+    let (data, response) = try await fetchRaw("/auth/sign-in/email", body: body, method: .post)
+    if !(200...299).contains(response.statusCode) {
+        throw AuthError.invalidResponse
+    }
+    if let token = response.value(forHTTPHeaderField: "set-auth-jwt") ?? response.value(forHTTPHeaderField: "set-auth-token") {
+        return token
+    }
+    if let token = sessionTokenFromResponse(response) {
+        return token
+    }
+    if let body = try? JSONDecoder().decode(SignInResponseBody.self, from: data),
+       let token = body.token {
+        return token
+    }
+    throw AuthError.missingToken
+}
+
+func fetchRaw<T: Encodable>(
+    _ path: String,
+    queryItems: [URLQueryItem] = [],
+    body: T?,
+    method: HTTPMethods = .get) async throws -> (Data, HTTPURLResponse) {
+    
+    let components = makeURLComponents(path: path, queryItems: queryItems)
+    guard let url = components.url else {
+        throw URLError(.badURL)
+    }
         
-    var request = URLRequest(url: components.url!)
+    var request = URLRequest(url: url)
     request.httpMethod = method.rawValue
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
@@ -82,9 +170,35 @@ func fetch<T: Encodable, R: Decodable>(
         request.setValue("Bearer " + AppVars.token!, forHTTPHeaderField: "Authorization")
     }
     
-    let (data, _) = try await URLSession.shared.data(for: request)
+#if DEBUG
+    print("REQUEST", request.httpMethod ?? "", request.url?.absoluteString ?? "")
+    print("AUTH", request.value(forHTTPHeaderField: "Authorization") ?? "none")
+#endif
+
+    let (data, response) = try await URLSession.shared.data(for: request)
+    guard let httpResponse = response as? HTTPURLResponse else {
+        throw URLError(.badServerResponse)
+    }
+
+#if DEBUG
+    print("STATUS", httpResponse.statusCode)
+    print("HEADERS", httpResponse.allHeaderFields)
+    print("BODY", String(data: data, encoding: .utf8) ?? "<non-utf8>")
+#endif
+    return (data, httpResponse)
+}
+
+/// Standard fetch function.
+func fetch<T: Encodable, R: Decodable>(
+    _ path: String,
+    queryItems: [URLQueryItem] = [],
+    body: T?,
+    method: HTTPMethods = .get) async throws -> R {
+
+    let (data, _) = try await fetchRaw(path, queryItems: queryItems, body: body, method: method)
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601withFractionalSeconds
+    decoder.keyDecodingStrategy = .convertFromSnakeCase
     // TODO: Catch and handle this try block.
     let decodedData = try decoder.decode(R.self, from: data)
     return decodedData

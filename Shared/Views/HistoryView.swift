@@ -14,12 +14,12 @@ struct PointTransaction: Codable, Hashable {
     var description: String?
     var createdby: String?
     var customerid: UInt
-    var created_at: Date
+    var createdAt: Date
     
     func getNiceDate() -> String {
         let dateFormatterPrint = DateFormatter()
         dateFormatterPrint.dateFormat = "MMM dd,yyyy"
-        return dateFormatterPrint.string(from: created_at)
+        return dateFormatterPrint.string(from: createdAt)
     }
 }
 
@@ -29,14 +29,14 @@ struct CreditTransaction: Codable, Hashable {
     var description: String?
     var createdby: String?
     var customerid: UInt
-    var created_at: Date
+    var createdAt: Date
         
     var formattedDate: String {
         get {
             let dateFormatter = DateFormatter()
             dateFormatter.dateStyle = .short
             dateFormatter.timeStyle = .medium
-            return dateFormatter.string(from: created_at)
+            return dateFormatter.string(from: createdAt)
         }
     }
     

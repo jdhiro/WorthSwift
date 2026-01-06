@@ -6,17 +6,12 @@
 //
 
 import SwiftUI
-import Sentry
 import Foundation
 import KeychainAccess
 
 // Althought not needed for SwiftUI apps, create a AppDelegate here that will be imported into the main app via an adapter.
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        /*SentrySDK.start { options in
-            options.dsn = "https://76c777eb58ad41ae851250a46330149e@o218740.ingest.sentry.io/5948174"
-            options.debug = true // Enabled debug when first installing is always helpful
-        }*/
         return true
     }
 }
@@ -44,9 +39,10 @@ struct Constants {
  */
 
 struct Constants {
-    static let httpScheme = "https"
-    static let httpHost = "api.wrth.io"
-    //static let httpPort = 80
+    static let httpScheme = "http"
+    static let httpHost = "localhost"
+    static let httpPort: Int? = 3000
+    static let apiBasePath = "/api"
 }
 
 private let keychain = Keychain(service: "io.hiro.worth")

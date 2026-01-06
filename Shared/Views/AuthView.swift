@@ -8,15 +8,10 @@
 import SwiftUI
 import KeychainAccess
 
-/// Username and password, to be convert to JSON object for authenticating the user.
+/// Email and password, to be convert to JSON object for authenticating the user.
 struct SignInRequest: Codable {
-    var username: String = ""
+    var email: String = ""
     var password: String = ""
-}
-
-/// Authentication response, containing only a JWT.
-struct SignInResponse: Codable {
-    let token: String
 }
 
 @available(macOS 12.0, *)
@@ -41,9 +36,11 @@ struct AuthView: View {
             VStack() {
                 NavigationLink("Work Folder", destination: SearchView(), isActive: $nextScreen).hidden()
                 Image("logo").resizable().aspectRatio(contentMode: .fit)
-                TextField("username", text: $formData.username)
+                TextField("email", text: $formData.email)
                     .disableAutocorrection(true)
                     .autocapitalization(.none)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
                     .padding()
                     .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white))
                 SecureField("password", text: $formData.password)
@@ -52,8 +49,8 @@ struct AuthView: View {
                 Button(action: {
                     Task {
                         do {
-                            let signInResponse: SignInResponse = try await fetch("/auth", body: formData, method: .post)
-                            AppVars.token = signInResponse.token
+                            let token = try await signIn(email: formData.email, password: formData.password)
+                            AppVars.token = token
                             nextScreen = true
                         } catch {
                             showError = true
@@ -95,5 +92,4 @@ struct AuthView_Previews: PreviewProvider {
         }
     }
 }
-
 
